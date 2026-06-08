@@ -211,7 +211,8 @@ const KnockoutStage = ({ allPredictions, onBackToGroups }: Props) => {
         ),
       };
 
-      await ensureUserInDb(savedId, savedUser);
+      const savedPassword = localStorage.getItem('worldcup_password') || '';
+      await ensureUserInDb(savedId, savedUser, savedPassword);
       await saveUserPredictions(savedId, allData as any);
 
       localStorage.setItem(`${storagePrefix}_finalized`, 'true');

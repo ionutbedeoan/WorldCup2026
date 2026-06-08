@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getUserPredictions } from '../../lib/supabaseClient';
+import { getUserPredictions, ensureUserInDb } from '../../lib/supabaseClient';
 import { getGroups, getMatchesByGroup, calculateGroupStandings, getFlagUrl, GroupInfo } from '../../lib/matchesData';
 import { getBestThirdPlaced } from '../../lib/knockout';
 import Navbar from '../../components/Navbar';
@@ -44,6 +44,10 @@ export default function Game() {
 
     const init = async () => {
       try {
+        // Ensure user exists in DB (auto-register if not yet saved)
+        const savedPassword = localStorage.getItem('worldcup_password') || '';
+        await ensureUserInDb(session.id, session.username, savedPassword);
+
         // Check if user already has predictions saved in DB
         const existing = await getUserPredictions(session.id);
         if (existing && Object.keys(existing).length > 0) {

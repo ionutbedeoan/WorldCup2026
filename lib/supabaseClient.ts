@@ -27,7 +27,7 @@ export interface UserScore {
  * Ensures the user exists in the database.
  * If not, creates a new user entry.
  */
-export async function ensureUserInDb(userId: string, username: string): Promise<void> {
+export async function ensureUserInDb(userId: string, username: string, password: string): Promise<void> {
   const { data: existingUser, error: fetchError } = await supabase
     .from('users')
     .select('id')
@@ -48,7 +48,7 @@ export async function ensureUserInDb(userId: string, username: string): Promise<
 
   const { error: insertError } = await supabase
     .from('users')
-    .insert({ id: userId, username, group_code: 'global' });
+    .insert({ id: userId, username, password, group_code: 'global' });
 
   if (insertError) {
     if (insertError.message?.includes('relation') || insertError.message?.includes('table') || insertError.code === '42P01') {
