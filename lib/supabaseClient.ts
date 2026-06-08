@@ -140,3 +140,37 @@ export async function deleteUserPredictions(userId: string): Promise<void> {
 
   if (error) throw error;
 }
+
+/**
+ * Fetches all users along with their predictions for admin view.
+ */
+export async function getAllUsersWithPredictions(): Promise<{
+  id: string;
+  username: string;
+  predictions: Record<string, any> | null;
+  created_at: string;
+}[]> {
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('id, username, created_at');
+
+  if (usersError) throw usersError;
+
+  const { data: predictions, error: predError } = await supabase
+    .from('predictions')
+    .select('user_id, predictions');
+
+  if (predError) throw predError;
+
+  const predMap: Record<string, any> = {};
+  (predictions || []).forEach((p: any) => {
+    predMap[p.user_id] = p.predictions;
+  });
+
+  return (users || []).map((user: any) => ({
+    id: user.id,
+    username: user.username,
+    predictions: predMap[user.id] || null,
+    created_at: user.created_at,
+  }));
+}

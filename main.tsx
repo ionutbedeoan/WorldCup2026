@@ -5,6 +5,7 @@ import Home from './app/page';
 import Game from './app/game/page';
 import MyPredictions from './app/my-predictions/page';
 import Leaderboard from './app/leaderboard/page';
+import Admin from './app/admin/page';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -15,6 +16,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <Route path="/game" element={<Game />} />
         <Route path="/my-predictions" element={<MyPredictions />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </BrowserRouter>
   </React.StrictMode>

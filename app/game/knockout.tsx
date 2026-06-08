@@ -177,8 +177,19 @@ const KnockoutStage = ({ allPredictions, onBackToGroups }: Props) => {
         })),
       );
 
+      // Convert knockout scores to proper format for saving
+      const knockoutScoresForSave: Record<number, { home_score: number; away_score: number }> = {};
+      Object.entries(knockoutScores).forEach(([matchId, score]) => {
+        const h = parseInt(score.home, 10);
+        const a = parseInt(score.away, 10);
+        if (!isNaN(h) && !isNaN(a)) {
+          knockoutScoresForSave[parseInt(matchId)] = { home_score: h, away_score: a };
+        }
+      });
+
       const allData = {
         group_predictions: allPredictions,
+        knockout_scores: knockoutScoresForSave,
         knockout_winners: allWinners,
         knockout_bracket: finalBracket.map((round) =>
           round.map((m) => ({

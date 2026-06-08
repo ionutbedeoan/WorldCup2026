@@ -4,7 +4,7 @@ import { getAllUserPredictions, getAllUsers } from '../../lib/supabaseClient';
 import { getAllGroupMatches, evaluatePredictions, getFlagUrl } from '../../lib/matchesData';
 import { getGroups, GroupInfo, GroupMatch } from '../../lib/matchesData';
 import Navbar from '../../components/Navbar';
-import { Trophy, Users, Award, RefreshCw, Eye, EyeOff, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trophy, Users, Award, RefreshCw, Eye, EyeOff, ChevronDown, ChevronUp, Swords } from 'lucide-react';
 
 interface LeaderboardEntry {
   username: string;
@@ -25,7 +25,7 @@ export default function Leaderboard() {
   const [groups] = useState<GroupInfo[]>(getGroups());
   const [allMatches] = useState<GroupMatch[]>(getAllGroupMatches());
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
-  const [userPredictionMap, setUserPredictionMap] = useState<Record<string, Record<string, { home_score: number; away_score: number }>>>({});
+  const [userPredictionMap, setUserPredictionMap] = useState<Record<string, any>>({});
 
   const checkUserSession = () => {
     const savedUser = localStorage.getItem('worldcup_username');
@@ -84,21 +84,28 @@ export default function Leaderboard() {
       const users = await getAllUsers();
       const allPredictions = await getAllUserPredictions();
 
-      // Create a map of userId -> predictions
-      const predMap: Record<string, Record<string, { home_score: number; away_score: number }>> = {};
+      // Create a map of userId -> full predictions data
+      const predMap: Record<string, any> = {};
+      const userHasPredictions = new Set<string>();
       allPredictions.forEach((p) => {
-        // The predictions stored include group_predictions, knockout_winners, knockout_bracket.
-        // For group scoring we extract just the group_predictions part
         const data = p.predictions as any;
-        const groupPreds = data?.group_predictions || data || {};
-        predMap[p.user_id] = groupPreds;
+        predMap[p.user_id] = data;
+        // Check if user has any actual predictions (group or knockout)
+        const hasGroupPreds = data?.group_predictions && Object.keys(data.group_predictions).length > 0;
+        const hasKnockout = data?.knockout_bracket && data.knockout_bracket.length > 0;
+        if (hasGroupPreds && hasKnockout) {
+          userHasPredictions.add(p.user_id);
+        }
       });
       setUserPredictionMap(predMap);
 
       // For each user, evaluate their predictions against the results
-      const entries: LeaderboardEntry[] = users.map((user) => {
+      const entries: LeaderboardEntry[] = users
+        .filter((user) => userHasPredictions.has(user.id))
+        .map((user) => {
         let allUserPreds: Record<string, { home_score: number; away_score: number }> = {};
-        const userData = predMap[user.id];
+        const fullData = predMap[user.id];
+        const userData = fullData?.group_predictions || fullData || {};
         if (userData) {
           // Flatten group predictions into a single map for evaluation
           Object.values(userData as any).forEach((groupPreds: any) => {
@@ -182,16 +189,6 @@ export default function Leaderboard() {
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowResultsForm(!showResultsForm)}
-              className="flex items-center gap-2 px-4 py-2 border border-slate-700 bg-slate-900/65 hover:bg-slate-800/80 text-slate-300 text-sm font-semibold rounded-xl transition-all"
-            >
-              {showResultsForm ? (
-                <><EyeOff className="h-4 w-4" /> Hide Results</>
-              ) : (
-                <><Eye className="h-4 w-4" /> Set Results</>
-              )}
-            </button>
             <button
               onClick={fetchData}
               disabled={isLoading}
@@ -291,7 +288,7 @@ export default function Leaderboard() {
                   if (rank === 2) rankBadge = <span className="text-2xl min-w-[24px] text-center">🥈</span>;
                   if (rank === 3) rankBadge = <span className="text-2xl min-w-[24px] text-center">🥉</span>;
 
-                  const userPreds = userPredictionMap[entry.userId] as Record<string, any> | undefined;
+                  const fullUserData = userPredictionMap[entry.userId] as any;
 
                   return (
                     <div key={entry.userId}>
@@ -349,59 +346,7 @@ export default function Leaderboard() {
                       </button>
 
                       {/* Expanded predictions */}
-                      {isExpanded && userPreds && (
-                        <div className="bg-slate-900/70 border border-cupGold-500/30 border-t-0 rounded-b-2xl p-4 overflow-hidden">
-                          {Object.keys(userPreds).length === 0 ? (
-                            <p className="text-xs text-slate-500 text-center py-2">No group predictions found.</p>
-                          ) : (
-                            <div className="space-y-2 max-h-80 overflow-y-auto custom-scrollbar pr-1">
-                              {Object.entries(userPreds).flatMap(([groupName, matches]) => {
-                                if (!matches || typeof matches !== 'object') return [];
-                                const matchEntries = Object.entries(matches as Record<string, { home_score: number; away_score: number }>);
-                                if (matchEntries.length === 0) return [];
-                                return [
-                                  <div key={groupName} className="mb-2">
-                                    <div className="text-[10px] font-bold text-cupGold-400 uppercase tracking-wider mb-1.5">
-                                      {groupName}
-                                    </div>
-                                    <div className="space-y-1">
-                                      {matchEntries.map(([matchKey, score]) => {
-                                        const teams = matchKey.split('_vs_');
-                                        const home = teams[0];
-                                        const away = teams[1] || '?';
-                                        return (
-                                          <div
-                                            key={matchKey}
-                                            className="flex items-center justify-between bg-slate-800/40 px-2.5 py-1.5 rounded-lg"
-                                          >
-                                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                              {getFlagUrl(home) && (
-                                                <img src={getFlagUrl(home)} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" />
-                                              )}
-                                              <span className="text-xs font-medium text-slate-300 truncate">{home}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1 mx-2">
-                                              <span className="w-5 text-center text-sm font-extrabold text-white">{score.home_score}</span>
-                                              <span className="text-slate-600 text-[10px]">:</span>
-                                              <span className="w-5 text-center text-sm font-extrabold text-white">{score.away_score}</span>
-                                            </div>
-                                            <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
-                                              <span className="text-xs font-medium text-slate-300 truncate">{away}</span>
-                                              {getFlagUrl(away) && (
-                                                <img src={getFlagUrl(away)} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" />
-                                              )}
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
-                                    </div>
-                                  </div>
-                                ];
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      {isExpanded && fullUserData && <UserPredictionsDetail fullUserData={fullUserData} />}
                     </div>
                   );
                 })
@@ -409,6 +354,339 @@ export default function Leaderboard() {
             </div>
         )}
       </main>
+    </div>
+  );
+}
+
+// ─── User Predictions Detail Component ──────────────────────────────────────
+
+function UserPredictionsDetail({ fullUserData }: { fullUserData: any }) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+  const [expandedKnockoutRounds, setExpandedKnockoutRounds] = useState<Record<string, boolean>>({
+    round_of_32: false,
+    round_of_16: false,
+    quarter_final: false,
+    semi_final: false,
+  });
+
+  const groupPredictions = fullUserData?.group_predictions || null;
+  const knockoutBracket = fullUserData?.knockout_bracket || null;
+  const knockoutWinners = fullUserData?.knockout_winners || null;
+  const knockoutScores = fullUserData?.knockout_scores || null;
+
+  const roundNames: Record<string, string> = {
+    round_of_32: 'Round of 32',
+    round_of_16: 'Round of 16',
+    quarter_final: 'Quarter-Finals',
+    semi_final: 'Semi-Finals',
+    third_place: 'Third Place Match',
+    final: 'FINAL',
+  };
+
+  const roundEmojis: Record<string, string> = {
+    round_of_32: '🔵',
+    round_of_16: '🟢',
+    quarter_final: '🟡',
+    semi_final: '🟠',
+    third_place: '🥉',
+    final: '🏆',
+  };
+
+  const alwaysVisibleRounds = ['third_place', 'final'];
+
+  const toggleGroup = (groupName: string) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupName]: !prev[groupName],
+    }));
+  };
+
+  const toggleKnockoutRound = (round: string) => {
+    setExpandedKnockoutRounds((prev) => ({
+      ...prev,
+      [round]: !prev[round],
+    }));
+  };
+
+  // Get all knockout rounds except the always-visible ones
+  const collapsibleKnockoutRounds = knockoutBracket
+    ? knockoutBracket.filter(
+        (round: any[]) => round.length > 0 && !alwaysVisibleRounds.includes(round[0]?.round)
+      )
+    : [];
+
+  // Get always-visible knockout rounds (third_place, final)
+  const alwaysVisibleRoundsData = knockoutBracket
+    ? knockoutBracket.filter(
+        (round: any[]) => round.length > 0 && alwaysVisibleRounds.includes(round[0]?.round)
+      )
+    : [];
+
+  const hasGroupPreds = groupPredictions && Object.keys(groupPredictions).length > 0;
+  const hasKnockout = knockoutBracket && knockoutBracket.length > 0;
+
+  if (!hasGroupPreds && !hasKnockout) {
+    return (
+      <div className="bg-slate-900/70 border border-cupGold-500/30 border-t-0 rounded-b-2xl p-4">
+        <p className="text-xs text-slate-500 text-center py-2">No predictions data available.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-slate-900/70 border border-cupGold-500/30 border-t-0 rounded-b-2xl p-3 overflow-hidden">
+      <div className="space-y-2 max-h-[32rem] overflow-y-auto custom-scrollbar pr-1">
+        {/* ── Group Stage ── */}
+        {hasGroupPreds && (
+          <div>
+            <div className="flex items-center gap-1.5 mb-2">
+              <Trophy className="h-3.5 w-3.5 text-cupGold-400" />
+              <span className="text-[10px] font-extrabold text-cupGold-400 uppercase tracking-wider">
+                Group Stage
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {Object.entries(groupPredictions).map(([groupName, matches]: [string, any]) => {
+                const matchEntries = Object.entries(matches || {});
+                if (matchEntries.length === 0) return null;
+                const isExpanded = expandedGroups[groupName];
+
+                return (
+                  <div key={groupName} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-800/60">
+                    {/* Group header - clickable */}
+                    <button
+                      onClick={() => toggleGroup(groupName)}
+                      className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-800/50 transition-all text-left"
+                    >
+                      <span className="text-xs font-bold text-slate-300">{groupName}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full">
+                          {matchEntries.length} matches
+                        </span>
+                        {isExpanded ? (
+                          <ChevronUp className="h-3 w-3 text-slate-500" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-slate-500" />
+                        )}
+                      </div>
+                    </button>
+
+                    {/* Group matches - collapsible */}
+                    {isExpanded && (
+                      <div className="px-3 pb-2 space-y-1">
+                        {matchEntries.map(([matchKey, score]: [string, any]) => {
+                          const teams = matchKey.split('_vs_');
+                          const home = teams[0];
+                          const away = teams[1] || '?';
+                          return (
+                            <div
+                              key={matchKey}
+                              className="flex items-center justify-between bg-slate-800/40 px-2.5 py-1.5 rounded-lg"
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                {getFlagUrl(home) && (
+                                  <img src={getFlagUrl(home)} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" />
+                                )}
+                                <span className="text-xs font-medium text-slate-300 truncate">{home}</span>
+                              </div>
+                              <div className="flex items-center gap-1 mx-2">
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score.home_score}</span>
+                                <span className="text-slate-600 text-[10px]">:</span>
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score.away_score}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                                <span className="text-xs font-medium text-slate-300 truncate">{away}</span>
+                                {getFlagUrl(away) && (
+                                  <img src={getFlagUrl(away)} alt="" className="w-4 h-3 object-cover rounded-sm flex-shrink-0" />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Knockout Stage ── */}
+        {hasKnockout && (
+          <div className="pt-1">
+            <div className="flex items-center gap-1.5 mb-2">
+              <Swords className="h-3.5 w-3.5 text-cupGold-400" />
+              <span className="text-[10px] font-extrabold text-cupGold-400 uppercase tracking-wider">
+                Knockout Stage
+              </span>
+            </div>
+            <div className="space-y-1.5">
+              {/* Collapsible knockout rounds (round_of_32, round_of_16, quarter_final, semi_final) */}
+              {collapsibleKnockoutRounds.map((round: any[], ri: number) => {
+                if (round.length === 0) return null;
+                const roundType = round[0].round;
+                const isExpanded = expandedKnockoutRounds[roundType];
+
+                return (
+                  <div key={ri} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-800/60">
+                    <button
+                      onClick={() => toggleKnockoutRound(roundType)}
+                      className="w-full flex items-center justify-between px-3 py-2 hover:bg-slate-800/50 transition-all text-left"
+                    >
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <span>{roundEmojis[roundType] || '⚽'}</span>
+                        <span>{roundNames[roundType] || roundType}</span>
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded-full">
+                          {round.length} matches
+                        </span>
+                        {isExpanded ? (
+                          <ChevronUp className="h-3 w-3 text-slate-500" />
+                        ) : (
+                          <ChevronDown className="h-3 w-3 text-slate-500" />
+                        )}
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="px-3 pb-2 space-y-1">
+                        {round.map((match: any) => {
+                          const score = knockoutScores?.[match.id];
+                          const winner = knockoutWinners?.[match.id];
+                          return (
+                            <div
+                              key={match.id}
+                              className="flex items-center justify-between bg-slate-800/40 px-2.5 py-1.5 rounded-lg"
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                {match.home_team && (
+                                  <img
+                                    src={getFlagUrl(match.home_team)}
+                                    alt=""
+                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                                <span className={`text-xs truncate ${winner === 'home' ? 'text-cupGold-300 font-bold' : 'text-slate-400'}`}>
+                                  {match.home_team || 'TBD'}
+                                </span>
+                                {winner === 'home' && <span className="text-[9px] text-cupGold-400">★</span>}
+                              </div>
+                              <div className="flex items-center gap-1 mx-2">
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score?.home_score ?? '-'}</span>
+                                <span className="text-slate-600 text-[10px]">:</span>
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score?.away_score ?? '-'}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                                {winner === 'away' && <span className="text-[9px] text-cupGold-400">★</span>}
+                                <span className={`text-xs truncate ${winner === 'away' ? 'text-cupGold-300 font-bold' : 'text-slate-400'}`}>
+                                  {match.away_team || 'TBD'}
+                                </span>
+                                {match.away_team && (
+                                  <img
+                                    src={getFlagUrl(match.away_team)}
+                                    alt=""
+                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {/* Always-visible knockout rounds (third_place, final) */}
+              {alwaysVisibleRoundsData.map((round: any[], ri: number) => {
+                if (round.length === 0) return null;
+                return (
+                  <div key={`always-${ri}`} className="bg-slate-800/30 rounded-xl overflow-hidden border border-slate-800/60">
+                    <div className="px-3 py-2">
+                      <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5 mb-2">
+                        <span>{roundEmojis[round[0].round] || '⚽'}</span>
+                        <span>{roundNames[round[0].round] || round[0].round}</span>
+                      </span>
+                      <div className="space-y-1">
+                        {round.map((match: any) => {
+                          const score = knockoutScores?.[match.id];
+                          const winner = knockoutWinners?.[match.id];
+                          return (
+                            <div
+                              key={match.id}
+                              className="flex items-center justify-between bg-slate-800/40 px-2.5 py-1.5 rounded-lg"
+                            >
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                {match.home_team && (
+                                  <img
+                                    src={getFlagUrl(match.home_team)}
+                                    alt=""
+                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                                <span className={`text-xs truncate ${winner === 'home' ? 'text-cupGold-300 font-bold' : 'text-slate-400'}`}>
+                                  {match.home_team || 'TBD'}
+                                </span>
+                                {winner === 'home' && <span className="text-[9px] text-cupGold-400">★</span>}
+                              </div>
+                              <div className="flex items-center gap-1 mx-2">
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score?.home_score ?? '-'}</span>
+                                <span className="text-slate-600 text-[10px]">:</span>
+                                <span className="w-5 text-center text-xs font-extrabold text-white">{score?.away_score ?? '-'}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0 justify-end">
+                                {winner === 'away' && <span className="text-[9px] text-cupGold-400">★</span>}
+                                <span className={`text-xs truncate ${winner === 'away' ? 'text-cupGold-300 font-bold' : 'text-slate-400'}`}>
+                                  {match.away_team || 'TBD'}
+                                </span>
+                                {match.away_team && (
+                                  <img
+                                    src={getFlagUrl(match.away_team)}
+                                    alt=""
+                                    className="w-4 h-3 object-cover rounded-sm flex-shrink-0"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                  />
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Champion prediction */}
+              {knockoutWinners?.[104] && (() => {
+                const finalRound = knockoutBracket?.flat().find((m: any) => m.id === 104);
+                if (!finalRound) return null;
+                const champName = knockoutWinners[104] === 'home'
+                  ? finalRound.home_team
+                  : finalRound.away_team;
+                if (!champName) return null;
+                return (
+                  <div className="mt-2 p-3 bg-gradient-to-r from-cupGold-500/10 via-slate-800/50 to-slate-800/50 border border-cupGold-500/30 rounded-xl text-center">
+                    <span className="text-lg">🏆</span>
+                    <span className="text-xs font-extrabold text-cupGold-300 ml-1.5">
+                      Predicted Champion
+                    </span>
+                    <div className="text-sm font-extrabold text-white mt-0.5">
+                      {champName}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
