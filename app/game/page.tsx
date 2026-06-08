@@ -21,6 +21,11 @@ export default function Game() {
   const [savedGroupCount, setSavedGroupCount] = useState(0);
   const [bestThirdTeams, setBestThirdTeams] = useState<{group: string; team: string; flag_url: string; points: number; gd: number; gf: number}[]>([]);
 
+  const getStoragePrefix = (): string => {
+    const user = localStorage.getItem('worldcup_username');
+    return user ? `wck_${user}` : '';
+  };
+
   const checkUserSession = () => {
     const savedUser = localStorage.getItem('worldcup_username');
     const savedId = localStorage.getItem('worldcup_user_id');
@@ -47,14 +52,43 @@ export default function Game() {
           return;
         }
 
-        const stored = localStorage.getItem('worldcup_local_predictions');
+        const prefix = getStoragePrefix();
+
+        // ── Migrate old global keys to scoped keys ──────────────
+        if (prefix) {
+          const oldLocal = localStorage.getItem('worldcup_local_predictions');
+          if (oldLocal && !localStorage.getItem(`${prefix}_local_predictions`)) {
+            localStorage.setItem(`${prefix}_local_predictions`, oldLocal);
+            localStorage.removeItem('worldcup_local_predictions');
+          }
+          const oldKnockout = localStorage.getItem('worldcup_in_knockout');
+          if (oldKnockout && !localStorage.getItem(`${prefix}_in_knockout`)) {
+            localStorage.setItem(`${prefix}_in_knockout`, oldKnockout);
+            localStorage.removeItem('worldcup_in_knockout');
+          }
+          // Migrate old group standings keys
+          for (let i = localStorage.length - 1; i >= 0; i--) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith('worldcup_group_standings_') && !key.includes('wck_')) {
+              const groupName = key.replace('worldcup_group_standings_', '');
+              const newKey = `${prefix}_group_standings_${groupName}`;
+              if (!localStorage.getItem(newKey)) {
+                localStorage.setItem(newKey, localStorage.getItem(key)!);
+              }
+              localStorage.removeItem(key);
+            }
+          }
+        }
+        // ── End migration ───────────────────────────────────────
+
+        const stored = localStorage.getItem(`${prefix}_local_predictions`);
         if (stored) {
           const parsed = JSON.parse(stored);
           if (parsed.predictions) setAllPredictions(parsed.predictions);
           if (typeof parsed.currentGroupIndex === 'number') setCurrentGroupIndex(parsed.currentGroupIndex);
         }
         // Check if already in knockout mode
-        if (localStorage.getItem('worldcup_in_knockout') === 'true') {
+        if (localStorage.getItem(`${prefix}_in_knockout`) === 'true') {
           setShowKnockout(true);
         }
       } catch (err) {
@@ -67,7 +101,8 @@ export default function Game() {
   }, [navigate]);
 
   const saveToLocalStorage = (predictions: Record<string, Record<string, { home_score: number; away_score: number }>>, groupIdx: number) => {
-    localStorage.setItem('worldcup_local_predictions', JSON.stringify({ predictions, currentGroupIndex: groupIdx }));
+    const prefix = getStoragePrefix();
+    localStorage.setItem(`${prefix}_local_predictions`, JSON.stringify({ predictions, currentGroupIndex: groupIdx }));
   };
 
   const currentGroup = groups[currentGroupIndex];
@@ -159,7 +194,8 @@ export default function Game() {
     const groupPreds = allPredictions[currentGroup.group];
     if (groupPreds) Object.entries(groupPreds).forEach(([key, val]) => { resultsMap[key] = val; });
     const standings = calculateGroupStandings(currentGroup.group, resultsMap);
-    localStorage.setItem(`worldcup_group_standings_${currentGroup.group}`, JSON.stringify(standings));
+    const prefix = getStoragePrefix();
+    localStorage.setItem(`${prefix}_group_standings_${currentGroup.group}`, JSON.stringify(standings));
     setCurrentGroupIndex((prev) => prev + 1);
     setSaveError('');
   };
@@ -172,12 +208,14 @@ export default function Game() {
   const goToGroup = (idx: number) => { setCurrentGroupIndex(idx); setSaveError(''); };
 
   const handleProceedToKnockout = () => {
-    localStorage.setItem('worldcup_in_knockout', 'true');
+    const prefix = getStoragePrefix();
+    localStorage.setItem(`${prefix}_in_knockout`, 'true');
     setShowKnockout(true);
   };
 
   const handleBackToGroups = () => {
-    localStorage.setItem('worldcup_in_knockout', 'false');
+    const prefix = getStoragePrefix();
+    localStorage.setItem(`${prefix}_in_knockout`, 'false');
     setShowKnockout(false);
   };
 
@@ -397,10 +435,10 @@ export default function Game() {
             </div>
 
             {currentMatches.map((match) => {
-              const key = `${match.home_team}_vs_${match.away_team}`;
-              const input = groupInputs[key];
+              const matchKey = `${match.home_team}_vs_${match.away_team}`;
+              const input = groupInputs[matchKey];
               return (
-                <div key={key} className="glass-panel rounded-2xl p-3 sm:p-4 border border-slate-800 hover:border-slate-700 transition-all">
+                <div key={`${match.group}_${match.match_number}`} className="glass-panel rounded-2xl p-3 sm:p-4 border border-slate-800 hover:border-slate-700 transition-all">
                   <div className="flex items-center gap-1.5 sm:gap-3">
                     <div className="flex-1 text-right min-w-0">
                       <div className="flex items-center justify-end gap-1.5">
@@ -412,13 +450,13 @@ export default function Game() {
                     </div>
 
                     <div className="flex flex-col items-center gap-0.5">
-                      <button type="button" onClick={() => { const c = parseInt(input?.home ?? '0', 10); if (c < 10) handleScoreChange(key, 'home', String(c + 1)); }}
+                      <button type="button" onClick={() => { const c = parseInt(input?.home ?? '0', 10); if (c < 10) handleScoreChange(matchKey, 'home', String(c + 1)); }}
                         className="w-7 h-5 sm:w-8 sm:h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-bold rounded text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-700"
                         disabled={parseInt(input?.home ?? '0') >= 10}>+</button>
                       <input type="number" min="0" max="10" placeholder="0" value={input?.home ?? '0'}
-                        onChange={(e) => { const n = parseInt(e.target.value, 10); if (e.target.value === '' || (!isNaN(n) && n >= 0 && n <= 999)) handleScoreChange(key, 'home', e.target.value); }}
+                        onChange={(e) => { const n = parseInt(e.target.value, 10); if (e.target.value === '' || (!isNaN(n) && n >= 0 && n <= 999)) handleScoreChange(matchKey, 'home', e.target.value); }}
                         className="w-9 h-9 sm:w-12 sm:h-10 text-center text-sm sm:text-base font-extrabold bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-cupGold-500 focus:outline-none transition-all placeholder-slate-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                      <button type="button" onClick={() => { const c = parseInt(input?.home ?? '0', 10); if (c > 0) handleScoreChange(key, 'home', String(c - 1)); }}
+                      <button type="button" onClick={() => { const c = parseInt(input?.home ?? '0', 10); if (c > 0) handleScoreChange(matchKey, 'home', String(c - 1)); }}
                         className="w-7 h-5 sm:w-8 sm:h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-bold rounded text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-700"
                         disabled={parseInt(input?.home ?? '0') <= 0}>−</button>
                     </div>
@@ -426,13 +464,13 @@ export default function Game() {
                     <span className="text-slate-500 font-bold text-sm sm:text-base self-center">:</span>
 
                     <div className="flex flex-col items-center gap-0.5">
-                      <button type="button" onClick={() => { const c = parseInt(input?.away ?? '0', 10); if (c < 10) handleScoreChange(key, 'away', String(c + 1)); }}
+                      <button type="button" onClick={() => { const c = parseInt(input?.away ?? '0', 10); if (c < 10) handleScoreChange(matchKey, 'away', String(c + 1)); }}
                         className="w-7 h-5 sm:w-8 sm:h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-bold rounded text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-700"
                         disabled={parseInt(input?.away ?? '0') >= 10}>+</button>
                       <input type="number" min="0" max="10" placeholder="0" value={input?.away ?? '0'}
-                        onChange={(e) => { const n = parseInt(e.target.value, 10); if (e.target.value === '' || (!isNaN(n) && n >= 0 && n <= 999)) handleScoreChange(key, 'away', e.target.value); }}
+                        onChange={(e) => { const n = parseInt(e.target.value, 10); if (e.target.value === '' || (!isNaN(n) && n >= 0 && n <= 999)) handleScoreChange(matchKey, 'away', e.target.value); }}
                         className="w-9 h-9 sm:w-12 sm:h-10 text-center text-sm sm:text-base font-extrabold bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-cupGold-500 focus:outline-none transition-all placeholder-slate-600 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                      <button type="button" onClick={() => { const c = parseInt(input?.away ?? '0', 10); if (c > 0) handleScoreChange(key, 'away', String(c - 1)); }}
+                      <button type="button" onClick={() => { const c = parseInt(input?.away ?? '0', 10); if (c > 0) handleScoreChange(matchKey, 'away', String(c - 1)); }}
                         className="w-7 h-5 sm:w-8 sm:h-6 flex items-center justify-center bg-slate-800 hover:bg-slate-700 text-white font-bold rounded text-xs transition-all disabled:opacity-30 disabled:cursor-not-allowed border border-slate-700"
                         disabled={parseInt(input?.away ?? '0') <= 0}>−</button>
                     </div>

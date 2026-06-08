@@ -118,6 +118,92 @@ export async function getAllUserPredictions(): Promise<{ user_id: string; predic
 }
 
 /**
+ * Creates a new user in the database with username and password.
+ */
+export async function createUserWithPassword(userId: string, username: string, password: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .insert({ id: userId, username, password, group_code: 'global' });
+
+  if (error) {
+    if (error.message?.includes('relation') || error.message?.includes('table') || error.code === '42P01') {
+      throw new Error(
+        'Database tables not found. Please open your Supabase SQL Editor and run the DATABASE_SETUP.sql script to create the required tables.'
+      );
+    }
+    if (error.code !== '23505') {
+      throw error;
+    }
+  }
+}
+
+/**
+ * Checks if a username already exists in the users table.
+ */
+export async function checkUsernameExists(username: string): Promise<boolean> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) {
+    if (error.message?.includes('relation') || error.message?.includes('table') || error.code === '42P01') {
+      throw new Error(
+        'Database tables not found. Please open your Supabase SQL Editor and run the DATABASE_SETUP.sql script to create the required tables.'
+      );
+    }
+    console.warn('Error checking username:', error);
+    return false;
+  }
+
+  return !!data;
+}
+
+/**
+ * Fetches the stored password for a given username.
+ * Returns the password string or null if user not found.
+ */
+export async function getUserPassword(username: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('password')
+    .eq('username', username)
+    .maybeSingle();
+
+  if (error) {
+    if (error.message?.includes('relation') || error.message?.includes('table') || error.code === '42P01') {
+      throw new Error(
+        'Database tables not found. Please open your Supabase SQL Editor and run the DATABASE_SETUP.sql script to create the required tables.'
+      );
+    }
+    console.warn('Error fetching password:', error);
+    return null;
+  }
+
+  return data?.password ?? null;
+}
+
+/**
+ * Updates the password for a given username.
+ */
+export async function saveUserPassword(username: string, password: string): Promise<void> {
+  const { error } = await supabase
+    .from('users')
+    .update({ password })
+    .eq('username', username);
+
+  if (error) {
+    if (error.message?.includes('relation') || error.message?.includes('table') || error.code === '42P01') {
+      throw new Error(
+        'Database tables not found. Please open your Supabase SQL Editor and run the DATABASE_SETUP.sql script to create the required tables.'
+      );
+    }
+    throw error;
+  }
+}
+
+/**
  * Fetches all users for leaderboard display.
  */
 export async function getAllUsers(): Promise<{ id: string; username: string }[]> {

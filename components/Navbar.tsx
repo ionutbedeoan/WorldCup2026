@@ -9,7 +9,8 @@ export default function Navbar() {
 
   useEffect(() => {
     const savedUser = localStorage.getItem('worldcup_username');
-    if (!savedUser) {
+    const savedPass = localStorage.getItem('worldcup_password');
+    if (!savedUser || !savedPass) {
       navigate('/');
     } else {
       setUsername(savedUser);
@@ -18,6 +19,7 @@ export default function Navbar() {
 
   const handleLogout = () => {
     localStorage.removeItem('worldcup_username');
+    localStorage.removeItem('worldcup_password');
     localStorage.removeItem('worldcup_user_id');
     navigate('/');
   };

@@ -104,6 +104,15 @@ const KnockoutStage = ({ allPredictions, onBackToGroups }: Props) => {
 
   useEffect(() => {
     try {
+      // Migrate old global worldcup_predictions_finalized to scoped key
+      if (storagePrefix) {
+        const oldFinalized = localStorage.getItem('worldcup_predictions_finalized');
+        if (oldFinalized && !localStorage.getItem(`${storagePrefix}_finalized`)) {
+          localStorage.setItem(`${storagePrefix}_finalized`, oldFinalized);
+          localStorage.removeItem('worldcup_predictions_finalized');
+        }
+      }
+
       const step = localStorage.getItem(`${storagePrefix}_step`);
       const scores = localStorage.getItem(`${storagePrefix}_scores`);
       if (step) setCurrentStep(parseInt(step, 10));
@@ -205,7 +214,7 @@ const KnockoutStage = ({ allPredictions, onBackToGroups }: Props) => {
       await ensureUserInDb(savedId, savedUser);
       await saveUserPredictions(savedId, allData as any);
 
-      localStorage.setItem('worldcup_predictions_finalized', 'true');
+      localStorage.setItem(`${storagePrefix}_finalized`, 'true');
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 5000);
     } catch (err: any) {

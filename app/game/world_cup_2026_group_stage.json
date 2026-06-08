@@ -364,10 +364,10 @@
     "group": "Group H",
     "match_number": 37,
     "date": "2026-06-21",
-    "home_team": "Uruguay",
-    "away_team": "Cabo Verde",
-    "stadium": "Hard Rock Stadium",
-    "city": "Miami"
+    "home_team": "Saudi Arabia",
+    "away_team": "Uruguay",
+    "stadium": "NRG Stadium",
+    "city": "Houston"
   },
   {
     "stage": "Group Stage",
@@ -375,7 +375,7 @@
     "match_number": 38,
     "date": "2026-06-21",
     "home_team": "Spain",
-    "away_team": "Saudi Arabia",
+    "away_team": "Cabo Verde",
     "stadium": "Mercedes-Benz Stadium",
     "city": "Atlanta"
   },

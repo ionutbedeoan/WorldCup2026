@@ -11,7 +11,8 @@ drop table if exists public.users;
 -- 1. Create the Users Table
 create table public.users (
   id text primary key,
-  username text not null,
+  username text not null unique,
+  password text not null default '',
   group_code text not null default 'global',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );

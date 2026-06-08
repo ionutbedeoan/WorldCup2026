@@ -91,9 +91,18 @@ export default function MyPredictions() {
       const prefix = user ? `wck_${user}` : 'wck';
       localStorage.removeItem(`${prefix}_step`);
       localStorage.removeItem(`${prefix}_scores`);
-      localStorage.removeItem('worldcup_in_knockout');
-      localStorage.removeItem('worldcup_predictions_finalized');
-      localStorage.removeItem('worldcup_local_predictions');
+      localStorage.removeItem(`${prefix}_in_knockout`);
+      localStorage.removeItem(`${prefix}_finalized`);
+      localStorage.removeItem(`${prefix}_local_predictions`);
+      // Remove all group standings for this user
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith(`${prefix}_group_standings_`)) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
       setTimeout(() => setMessage(null), 4000);
     } catch (err: any) {
       console.error('Error deleting predictions:', err);
