@@ -1,0 +1,254 @@
+[
+  {
+    "group": "Group A",
+    "teams": [
+      {
+        "name": "Mexico",
+        "flag_url": "https://flagcdn.com/w320/mx.png"
+      },
+      {
+        "name": "South Africa",
+        "flag_url": "https://flagcdn.com/w320/za.png"
+      },
+      {
+        "name": "South Korea",
+        "flag_url": "https://flagcdn.com/w320/kr.png"
+      },
+      {
+        "name": "Czechia",
+        "flag_url": "https://flagcdn.com/w320/cz.png"
+      }
+    ]
+  },
+  {
+    "group": "Group B",
+    "teams": [
+      {
+        "name": "Canada",
+        "flag_url": "https://flagcdn.com/w320/ca.png"
+      },
+      {
+        "name": "Switzerland",
+        "flag_url": "https://flagcdn.com/w320/ch.png"
+      },
+      {
+        "name": "Qatar",
+        "flag_url": "https://flagcdn.com/w320/qa.png"
+      },
+      {
+        "name": "Bosnia and Herzegovina",
+        "flag_url": "https://flagcdn.com/w320/ba.png"
+      }
+    ]
+  },
+  {
+    "group": "Group C",
+    "teams": [
+      {
+        "name": "Brazil",
+        "flag_url": "https://flagcdn.com/w320/br.png"
+      },
+      {
+        "name": "Morocco",
+        "flag_url": "https://flagcdn.com/w320/ma.png"
+      },
+      {
+        "name": "Haiti",
+        "flag_url": "https://flagcdn.com/w320/ht.png"
+      },
+      {
+        "name": "Scotland",
+        "flag_url": "https://flagcdn.com/w320/gb-sct.png"
+      }
+    ]
+  },
+  {
+    "group": "Group D",
+    "teams": [
+      {
+        "name": "United States",
+        "flag_url": "https://flagcdn.com/w320/us.png"
+      },
+      {
+        "name": "Paraguay",
+        "flag_url": "https://flagcdn.com/w320/py.png"
+      },
+      {
+        "name": "Australia",
+        "flag_url": "https://flagcdn.com/w320/au.png"
+      },
+      {
+        "name": "Türkiye",
+        "flag_url": "https://flagcdn.com/w320/tr.png"
+      }
+    ]
+  },
+  {
+    "group": "Group E",
+    "teams": [
+      {
+        "name": "Germany",
+        "flag_url": "https://flagcdn.com/w320/de.png"
+      },
+      {
+        "name": "Curaçao",
+        "flag_url": "https://flagcdn.com/w320/cw.png"
+      },
+      {
+        "name": "Ivory Coast",
+        "flag_url": "https://flagcdn.com/w320/ci.png"
+      },
+      {
+        "name": "Ecuador",
+        "flag_url": "https://flagcdn.com/w320/ec.png"
+      }
+    ]
+  },
+  {
+    "group": "Group F",
+    "teams": [
+      {
+        "name": "Netherlands",
+        "flag_url": "https://flagcdn.com/w320/nl.png"
+      },
+      {
+        "name": "Japan",
+        "flag_url": "https://flagcdn.com/w320/jp.png"
+      },
+      {
+        "name": "Tunisia",
+        "flag_url": "https://flagcdn.com/w320/tn.png"
+      },
+      {
+        "name": "Sweden",
+        "flag_url": "https://flagcdn.com/w320/se.png"
+      }
+    ]
+  },
+  {
+    "group": "Group G",
+    "teams": [
+      {
+        "name": "Belgium",
+        "flag_url": "https://flagcdn.com/w320/be.png"
+      },
+      {
+        "name": "Egypt",
+        "flag_url": "https://flagcdn.com/w320/eg.png"
+      },
+      {
+        "name": "Iran",
+        "flag_url": "https://flagcdn.com/w320/ir.png"
+      },
+      {
+        "name": "New Zealand",
+        "flag_url": "https://flagcdn.com/w320/nz.png"
+      }
+    ]
+  },
+  {
+    "group": "Group H",
+    "teams": [
+      {
+        "name": "Spain",
+        "flag_url": "https://flagcdn.com/w320/es.png"
+      },
+      {
+        "name": "Cabo Verde",
+        "flag_url": "https://flagcdn.com/w320/cv.png"
+      },
+      {
+        "name": "Saudi Arabia",
+        "flag_url": "https://flagcdn.com/w320/sa.png"
+      },
+      {
+        "name": "Uruguay",
+        "flag_url": "https://flagcdn.com/w320/uy.png"
+      }
+    ]
+  },
+  {
+    "group": "Group I",
+    "teams": [
+      {
+        "name": "France",
+        "flag_url": "https://flagcdn.com/w320/fr.png"
+      },
+      {
+        "name": "Senegal",
+        "flag_url": "https://flagcdn.com/w320/sn.png"
+      },
+      {
+        "name": "Norway",
+        "flag_url": "https://flagcdn.com/w320/no.png"
+      },
+      {
+        "name": "Iraq",
+        "flag_url": "https://flagcdn.com/w320/iq.png"
+      }
+    ]
+  },
+  {
+    "group": "Group J",
+    "teams": [
+      {
+        "name": "Argentina",
+        "flag_url": "https://flagcdn.com/w320/ar.png"
+      },
+      {
+        "name": "Algeria",
+        "flag_url": "https://flagcdn.com/w320/dz.png"
+      },
+      {
+        "name": "Austria",
+        "flag_url": "https://flagcdn.com/w320/at.png"
+      },
+      {
+        "name": "Jordan",
+        "flag_url": "https://flagcdn.com/w320/jo.png"
+      }
+    ]
+  },
+  {
+    "group": "Group K",
+    "teams": [
+      {
+        "name": "Portugal",
+        "flag_url": "https://flagcdn.com/w320/pt.png"
+      },
+      {
+        "name": "Uzbekistan",
+        "flag_url": "https://flagcdn.com/w320/uz.png"
+      },
+      {
+        "name": "Colombia",
+        "flag_url": "https://flagcdn.com/w320/co.png"
+      },
+      {
+        "name": "Congo DR",
+        "flag_url": "https://flagcdn.com/w320/cd.png"
+      }
+    ]
+  },
+  {
+    "group": "Group L",
+    "teams": [
+      {
+        "name": "England",
+        "flag_url": "https://flagcdn.com/w320/gb-eng.png"
+      },
+      {
+        "name": "Croatia",
+        "flag_url": "https://flagcdn.com/w320/hr.png"
+      },
+      {
+        "name": "Ghana",
+        "flag_url": "https://flagcdn.com/w320/gh.png"
+      },
+      {
+        "name": "Panama",
+        "flag_url": "https://flagcdn.com/w320/pa.png"
+      }
+    ]
+  }
+]
